@@ -7,13 +7,17 @@ import {
   Settings,
   FileText,
   Menu,
-  X
+  X,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -44,19 +48,21 @@ const Layout = ({ children }) => {
             </div>
             
             {/* Mobile menu button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-            >
-              {mobileMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
+            <div className="md:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+              >
+                {mobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
 
             {/* Desktop navigation */}
-            <nav className="hidden md:flex space-x-1">
+            <nav className="hidden md:flex space-x-1 items-center">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -74,6 +80,19 @@ const Layout = ({ children }) => {
                   </Link>
                 );
               })}
+              
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors ml-2"
+                aria-label="Toggle theme"
+              >
+                {theme === 'light' ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </button>
             </nav>
           </div>
 
@@ -98,6 +117,24 @@ const Layout = ({ children }) => {
                   </Link>
                 );
               })}
+              
+              {/* Theme Toggle for Mobile */}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                {theme === 'light' ? (
+                  <>
+                    <Moon className="h-4 w-4 mr-3" />
+                    Dark Mode
+                  </>
+                ) : (
+                  <>
+                    <Sun className="h-4 w-4 mr-3" />
+                    Light Mode
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>

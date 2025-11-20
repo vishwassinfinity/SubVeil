@@ -4,6 +4,13 @@ A professional, industry-ready frontend application for detecting and analyzing 
 
 ## Features
 
+### 🌓 Dark Mode
+- Toggle between light and dark themes
+- Persistent theme preference (saved in localStorage)
+- Automatic system preference detection
+- Smooth theme transitions
+- Complete coverage across all components
+
 ### 📊 Dashboard
 - Real-time statistics and metrics
 - Severity distribution charts
@@ -81,6 +88,8 @@ frontend/
 │   │   ├── Badge.jsx        # Severity badges
 │   │   ├── Button.jsx       # Button component
 │   │   └── StatCard.jsx     # Statistics card
+│   ├── context/            # React Context providers
+│   │   └── ThemeContext.jsx # Dark mode theme management
 │   ├── pages/              # Main application pages
 │   │   ├── Dashboard.jsx    # Overview dashboard
 │   │   ├── Scans.jsx        # Scan management
@@ -89,8 +98,9 @@ frontend/
 │   │   └── Reports.jsx      # Report generation
 │   ├── App.jsx             # Main app component with routing
 │   ├── main.jsx            # Application entry point
-│   └── index.css           # Global styles
+│   └── index.css           # Global styles with dark mode
 ├── public/                 # Static assets
+├── DARK_MODE.md           # Dark mode documentation
 ├── index.html             # HTML template
 └── package.json           # Dependencies and scripts
 ```
@@ -104,11 +114,12 @@ frontend/
 - **Actionable insights** - Clear remediation steps
 
 ### Professional UI/UX
-- Clean, modern interface
+- Clean, modern interface with dark mode support
 - Responsive design for all devices
 - Intuitive navigation
 - Real-time updates
 - Interactive data visualizations
+- Persistent user preferences
 
 ### Enterprise Ready
 - Scalable architecture
@@ -136,6 +147,13 @@ const API_BASE_URL = process.env.VITE_API_URL || 'http://localhost:3000/api';
 - `POST /api/reports` - Generate report
 
 ## Customization
+
+### Dark Mode
+The application includes a fully functional dark mode. See [DARK_MODE.md](./DARK_MODE.md) for detailed documentation on:
+- How to use the theme toggle
+- Theme customization options
+- Adding dark mode to new components
+- Technical implementation details
 
 ### Adding New Providers
 Edit `src/pages/Providers.jsx` to add new service providers with their fingerprints.
