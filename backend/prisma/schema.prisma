@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Scan {
+  id                 String    @id @default(uuid())
+  domain             String
+  status             String    @default("scheduled") // scheduled, running, paused, completed, failed
+  startTime          DateTime?
+  endTime            DateTime?
+  subdomainsFound    Int       @default(0)
+  vulnerableCount    Int       @default(0)
+  progress           Int       @default(0)
+  totalSubdomains    Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  findings           Finding[]
+  subdomains         Subdomain[]
+}
+
+model Subdomain {
+  id                 String    @id @default(uuid())
+  scanId             String
+  subdomain          String
+  isVulnerable       Boolean   @default(false)
+  cnameRecord        String?
+  aRecords           String?   // JSON array
+  httpStatusCode     Int?
+  httpTitle          String?
+  httpBody           String?
+  createdAt          DateTime  @default(now())
+  
+  scan               Scan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  @@index([scanId])
+  @@index([subdomain])
+}
+
+model Finding {
+  id                 String    @id @default(uuid())
+  scanId             String
+  subdomain          String
+  provider           String
+  severity           String    // critical, high, medium, low
+  confidence         Int       @default(0)
+  cnameRecord        String
+  aRecords           String?   // JSON array
+  httpStatusCode     Int
+  httpTitle          String?
+  httpBody           String?
+  providerPattern    String
+  fingerprints       String?   // JSON array
+  evidence           String?   // JSON object
+  remediation        String?   // JSON array
+  discovered         DateTime  @default(now())
+  resolved           Boolean   @default(false)
+  resolvedAt         DateTime?
+  
+  scan               Scan      @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  
+  @@index([scanId])
+  @@index([subdomain])
+  @@index([severity])
+  @@index([resolved])
+}
+
+model Provider {
+  id                 String    @id @default(uuid())
+  name               String    @unique
+  cname              String
+  fingerprints       String    // JSON array
+  httpCodes          String    // JSON array
+  active             Boolean   @default(true)
+  detectionsCount    Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Report {
+  id                 String    @id @default(uuid())
+  title              String
+  type               String    // full, summary, compliance, custom
+  format             String    // pdf, html, json, csv
+  findings           Int       @default(0)
+  domains            Int       @default(0)
+  status             String    @default("completed")
+  filePath           String?
+  generatedAt        DateTime  @default(now())
+  data               String?   // JSON data
+}
+
+model Statistics {
+  id                 String    @id @default(uuid())
+  date               DateTime  @default(now())
+  totalSubdomains    Int       @default(0)
+  vulnerableCount    Int       @default(0)
+  scansCompleted     Int       @default(0)
+  resolvedCount      Int       @default(0)
+  riskScore          Int       @default(0)
+}

@@ -5,7 +5,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 
 const Providers = () => {
-  const [providers] = useState([
+  const [providers, setProviders] = useState([
     {
       id: 1,
       name: 'GitHub Pages',
@@ -80,6 +80,18 @@ const Providers = () => {
     },
   ]);
 
+  const handleToggleActive = (id) => {
+    setProviders(providers.map(p => 
+      p.id === id ? { ...p, active: !p.active } : p
+    ));
+  };
+
+  const handleDeleteProvider = (id) => {
+    if (window.confirm('Are you sure you want to delete this provider?')) {
+      setProviders(providers.filter(p => p.id !== id));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -90,7 +102,7 @@ const Providers = () => {
             Manage provider fingerprints and detection patterns
           </p>
         </div>
-        <Button>
+        <Button onClick={() => alert('Add Provider functionality - Coming soon!')}>
           <Plus className="h-4 w-4 mr-2 inline" />
           Add Provider
         </Button>
@@ -142,9 +154,14 @@ const Providers = () => {
                     <h3 className="text-lg font-semibold text-gray-900">
                       {provider.name}
                     </h3>
-                    <Badge variant={provider.active ? 'success' : 'default'}>
-                      {provider.active ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <button
+                      onClick={() => handleToggleActive(provider.id)}
+                      title={provider.active ? 'Deactivate provider' : 'Activate provider'}
+                    >
+                      <Badge variant={provider.active ? 'success' : 'default'}>
+                        {provider.active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </button>
                     <Badge variant="info">
                       {provider.detectionsCount} detections
                     </Badge>
@@ -192,10 +209,18 @@ const Providers = () => {
                 </div>
 
                 <div className="flex space-x-2 ml-4">
-                  <button className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                  <button 
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                    title="Edit provider"
+                    onClick={() => alert('Edit functionality - Coming soon!')}
+                  >
                     <Edit className="h-4 w-4" />
                   </button>
-                  <button className="p-2 text-red-600 hover:bg-red-50 rounded">
+                  <button 
+                    onClick={() => handleDeleteProvider(provider.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded"
+                    title="Delete provider"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

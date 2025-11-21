@@ -1218,6 +1218,11 @@ select {
   color: #ffffff;
 }
 
+.dark select option {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
 input:focus,
 select:focus {
   outline: none;
@@ -1240,4 +1245,95 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+/* Dark Mode Additional Classes */
+.dark .bg-gray-800 {
+  background-color: #1f1f1f;
+}
+
+.dark .text-white {
+  color: #ffffff;
+}
+
+.dark .dark\:text-white {
+  color: #ffffff;
+}
+
+.dark .dark\:text-gray-300 {
+  color: #d4d4d4;
+}
+
+.dark .dark\:text-gray-400 {
+  color: #a3a3a3;
+}
+
+.dark .dark\:bg-gray-700 {
+  background-color: #262626;
+}
+
+.dark .dark\:bg-gray-800 {
+  background-color: #1f1f1f;
+}
+
+.dark .dark\:border-gray-600 {
+  border-color: #525252;
+}
+
+.bg-gradient-to-br {
+  background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+.from-gray-50 {
+  --tw-gradient-from: #f9fafb;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, rgba(249, 250, 251, 0));
+}
+
+.dark .from-gray-50 {
+  --tw-gradient-from: #1a1a1a;
+}
+
+.to-white {
+  --tw-gradient-to: #ffffff;
+}
+
+.dark .to-white {
+  --tw-gradient-to: #0d0d0d;
+}
+
+.w-1 {
+  width: 0.25rem;
+}
+
+.min-w-24 {
+  min-width: 6rem;
+}
+
+.min-w-32 {
+  min-width: 8rem;
+}
+
+.pl-2 {
+  padding-left: 0.5rem;
+}
+
+.pb-4 {
+  padding-bottom: 1rem;
+}
+
+.last\:border-0:last-child {
+  border-width: 0;
+}
+
+.h-2 {
+  height: 0.5rem;
+}
+
+.bg-gray-200 {
+  background-color: #e5e7eb;
+}
+
+.dark .bg-gray-200 {
+  background-color: #404040;
+}
+
 

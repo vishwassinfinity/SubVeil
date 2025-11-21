@@ -1,45 +1,61 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, Shield, Search, Clock, TrendingUp, TrendingDown, Activity, CheckCircle } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card';
 import Badge from '../components/Badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
+import { api } from '../utils/api';
 
 const Dashboard = () => {
-  const [stats] = useState({
-    totalSubdomains: 1247,
-    vulnerableSubdomains: 23,
-    activeScans: 3,
-    lastScanTime: '2 hours ago',
-    resolvedThisWeek: 15,
-    avgResolutionTime: '3.2 days',
-    scansConducted: 48,
-    riskScore: 72,
+  const [stats, setStats] = useState({
+    totalSubdomains: 0,
+    vulnerableSubdomains: 0,
+    activeScans: 0,
+    lastScanTime: '-',
+    resolvedThisWeek: 0,
+    avgResolutionTime: '-',
+    scansConducted: 0,
+    riskScore: 0,
   });
 
-  const [recentFindings] = useState([
-    {
-      id: 1,
-      subdomain: 'blog.example.com',
-      provider: 'GitHub Pages',
-      severity: 'critical',
-      discovered: '2024-11-20 10:30',
-    },
-    {
-      id: 2,
-      subdomain: 'docs.example.com',
-      provider: 'AWS S3',
-      severity: 'high',
-      discovered: '2024-11-20 09:15',
-    },
-    {
-      id: 3,
-      subdomain: 'staging.example.com',
-      provider: 'Heroku',
-      severity: 'medium',
-      discovered: '2024-11-19 16:45',
-    },
-  ]);
+  const [recentFindings, setRecentFindings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsResponse, findingsResponse] = await Promise.all([
+        api.getStats(),
+        api.getFindings({ limit: 3 })
+      ]);
+
+      const apiStats = statsResponse.data;
+      setStats({
+        totalSubdomains: apiStats.totalSubdomains || 0,
+        vulnerableSubdomains: apiStats.totalFindings || 0,
+        activeScans: apiStats.activeScans || 0,
+        lastScanTime: apiStats.lastScanTime || '-',
+        resolvedThisWeek: apiStats.resolvedThisWeek || 0,
+        avgResolutionTime: apiStats.avgResolutionTime || '-',
+        scansConducted: apiStats.totalScans || 0,
+        riskScore: apiStats.riskScore || 0,
+      });
+
+      setRecentFindings(findingsResponse.data.slice(0, 3));
+      setLoading(false);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+      setLoading(false);
+    }
+  };
 
   const severityData = [
     { name: 'Critical', value: 5, color: '#DC2626' },
@@ -84,6 +100,34 @@ const Dashboard = () => {
   const getSeverityBadge = (severity) => {
     return <Badge variant={severity}>{severity.toUpperCase()}</Badge>;
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-gray-900 font-semibold">{error}</p>
+          <button 
+            onClick={fetchDashboardData}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

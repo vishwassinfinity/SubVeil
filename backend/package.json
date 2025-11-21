@@ -1,0 +1,38 @@
+{
+  "name": "subveil-backend",
+  "version": "1.0.0",
+  "description": "SubVeil - Subdomain Takeover Detection Backend",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js"
+  },
+  "keywords": [
+    "subdomain",
+    "takeover",
+    "security",
+    "dns",
+    "vulnerability"
+  ],
+  "author": "Vishwas",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "helmet": "^8.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7",
+    "prisma": "^5.22.0"
+  }
+}

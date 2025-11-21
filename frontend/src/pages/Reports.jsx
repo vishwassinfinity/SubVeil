@@ -5,7 +5,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 
 const Reports = () => {
-  const [reports] = useState([
+  const [reports, setReports] = useState([
     {
       id: 1,
       title: 'Full Security Scan - example.com',
@@ -38,13 +38,48 @@ const Reports = () => {
     },
   ]);
 
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [newReport, setNewReport] = useState({
+    title: '',
+    type: 'Full Scan',
+    format: 'PDF',
+  });
+
   const handleDownload = (reportId, format) => {
-    // Simulate download
-    alert(`Downloading report ${reportId} in ${format} format`);
+    // Simulate download with actual file creation
+    const report = reports.find(r => r.id === reportId);
+    if (report) {
+      const blob = new Blob([`Report: ${report.title}\nFindings: ${report.findings}\nDate: ${report.date}`], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${report.title.replace(/\s+/g, '_')}.${format.toLowerCase()}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleGenerateReport = () => {
-    alert('Generate new report dialog would open here');
+    setShowGenerateModal(true);
+  };
+
+  const handleSubmitReport = (e) => {
+    e.preventDefault();
+    const newReportItem = {
+      id: reports.length + 1,
+      title: newReport.title,
+      date: new Date().toISOString().split('T')[0],
+      type: newReport.type,
+      findings: Math.floor(Math.random() * 50),
+      domains: Math.floor(Math.random() * 5) + 1,
+      status: 'completed',
+      format: newReport.format,
+    };
+    setReports([newReportItem, ...reports]);
+    setShowGenerateModal(false);
+    setNewReport({ title: '', type: 'Full Scan', format: 'PDF' });
   };
 
   return (
@@ -65,7 +100,13 @@ const Reports = () => {
 
       {/* Report Types */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => {
+            setNewReport({ ...newReport, type: 'Full Scan', title: 'Full Security Scan' });
+            setShowGenerateModal(true);
+          }}
+        >
           <CardContent className="text-center py-6">
             <FileText className="h-12 w-12 text-blue-600 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -77,7 +118,13 @@ const Reports = () => {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => {
+            setNewReport({ ...newReport, type: 'Summary', title: 'Summary Report' });
+            setShowGenerateModal(true);
+          }}
+        >
           <CardContent className="text-center py-6">
             <Calendar className="h-12 w-12 text-green-600 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -89,7 +136,13 @@ const Reports = () => {
           </CardContent>
         </Card>
 
-        <Card className="cursor-pointer hover:shadow-md transition-shadow">
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => {
+            setNewReport({ ...newReport, type: 'Custom', title: 'Custom Report' });
+            setShowGenerateModal(true);
+          }}
+        >
           <CardContent className="text-center py-6">
             <Filter className="h-12 w-12 text-purple-600 mx-auto mb-3" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -242,6 +295,78 @@ const Reports = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Generate Report Modal */}
+      {showGenerateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Generate New Report
+            </h3>
+            <form onSubmit={handleSubmitReport}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Report Title
+                  </label>
+                  <input
+                    type="text"
+                    value={newReport.title}
+                    onChange={(e) => setNewReport({ ...newReport, title: e.target.value })}
+                    placeholder="e.g., Security Scan - domain.com"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Report Type
+                  </label>
+                  <select
+                    value={newReport.type}
+                    onChange={(e) => setNewReport({ ...newReport, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="Full Scan">Full Scan</option>
+                    <option value="Summary">Summary</option>
+                    <option value="Compliance">Compliance</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Format
+                  </label>
+                  <select
+                    value={newReport.format}
+                    onChange={(e) => setNewReport({ ...newReport, format: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="PDF">PDF</option>
+                    <option value="HTML">HTML</option>
+                    <option value="JSON">JSON</option>
+                    <option value="CSV">CSV</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowGenerateModal(false);
+                    setNewReport({ title: '', type: 'Full Scan', format: 'PDF' });
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Generate Report
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

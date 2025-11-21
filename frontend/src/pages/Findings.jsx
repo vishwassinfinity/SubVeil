@@ -1,93 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, ExternalLink, ChevronDown, ChevronRight, Filter, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/Card';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
+import { api } from '../utils/api';
 
 const Findings = () => {
   const [expandedFinding, setExpandedFinding] = useState(null);
   const [filterSeverity, setFilterSeverity] = useState('all');
+  const [findings, setFindings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [findings] = useState([
-    {
-      id: 1,
-      subdomain: 'blog.example.com',
-      provider: 'GitHub Pages',
-      severity: 'critical',
-      confidence: 95,
-      discovered: '2024-11-20 10:30',
-      cname: 'username.github.io',
-      evidence: {
-        dnsRecords: {
-          cname: 'username.github.io',
-          aRecords: [],
-        },
-        httpResponse: {
-          statusCode: 404,
-          title: 'There isn\'t a GitHub Pages site here.',
-          body: 'If you\'re trying to publish one...',
-        },
-        providerPattern: 'GitHub Pages - Unclaimed repository',
-      },
-      remediation: [
-        'Remove the CNAME DNS record pointing to username.github.io',
-        'Or create the GitHub Pages repository to claim the subdomain',
-        'Verify no sensitive data is exposed on this subdomain',
-      ],
-    },
-    {
-      id: 2,
-      subdomain: 'docs.example.com',
-      provider: 'AWS S3',
-      severity: 'high',
-      confidence: 88,
-      discovered: '2024-11-20 09:15',
-      cname: 'docs-bucket.s3.amazonaws.com',
-      evidence: {
-        dnsRecords: {
-          cname: 'docs-bucket.s3.amazonaws.com',
-          aRecords: [],
-        },
-        httpResponse: {
-          statusCode: 404,
-          title: 'NoSuchBucket',
-          body: 'The specified bucket does not exist',
-        },
-        providerPattern: 'AWS S3 - Bucket not found',
-      },
-      remediation: [
-        'Remove the CNAME DNS record',
-        'Or create the S3 bucket with the exact name',
-        'Enable S3 bucket blocking public access policies',
-      ],
-    },
-    {
-      id: 3,
-      subdomain: 'staging.example.com',
-      provider: 'Heroku',
-      severity: 'medium',
-      confidence: 75,
-      discovered: '2024-11-19 16:45',
-      cname: 'old-app-12345.herokuapp.com',
-      evidence: {
-        dnsRecords: {
-          cname: 'old-app-12345.herokuapp.com',
-          aRecords: [],
-        },
-        httpResponse: {
-          statusCode: 404,
-          title: 'No such app',
-          body: 'There is no app configured at that hostname.',
-        },
-        providerPattern: 'Heroku - App not found',
-      },
-      remediation: [
-        'Remove the CNAME DNS record',
-        'Or recreate the Heroku app with the same name',
-        'Review all staging environments regularly',
-      ],
-    },
-  ]);
+  useEffect(() => {
+    fetchFindings();
+  }, []);
+
+  const fetchFindings = async () => {
+    try {
+      const response = await api.getFindings();
+      setFindings(response.data);
+      setLoading(false);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching findings:', err);
+      setError('Failed to load findings');
+      setLoading(false);
+    }
+  };
 
   const filteredFindings = filterSeverity === 'all' 
     ? findings 
@@ -97,15 +37,26 @@ const Findings = () => {
     setExpandedFinding(expandedFinding === id ? null : id);
   };
 
-  const exportFindings = () => {
-    const dataStr = JSON.stringify(findings, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    const exportFileDefaultName = `findings-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+  const exportFindings = async () => {
+    try {
+      const response = await api.exportFindings({ format: 'json' });
+      const dataStr = JSON.stringify(response.data, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      const exportFileDefaultName = `findings-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    } catch (err) {
+      console.error('Error exporting findings:', err);
+      alert('Failed to export findings');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString();
   };
 
   return (
@@ -153,6 +104,17 @@ const Findings = () => {
       </Card>
 
       {/* Findings List */}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading findings...</span>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center py-12">
+          <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600">{error}</p>
+        </div>
+      ) : (
       <div className="space-y-4">
         {filteredFindings.map((finding) => (
           <Card key={finding.id} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -182,9 +144,9 @@ const Findings = () => {
                   <div className="ml-10 mt-2 flex items-center space-x-4 text-sm text-gray-500">
                     <span>Provider: <span className="font-medium">{finding.provider}</span></span>
                     <span>•</span>
-                    <span>CNAME: <span className="font-mono">{finding.cname}</span></span>
+                    <span>CNAME: <span className="font-mono">{finding.cnameRecord}</span></span>
                     <span>•</span>
-                    <span>Discovered: {finding.discovered}</span>
+                    <span>Discovered: {formatDate(finding.createdAt)}</span>
                   </div>
                 </div>
                 <a
@@ -213,12 +175,12 @@ const Findings = () => {
                       <div className="font-mono text-sm space-y-2">
                         <div className="flex items-start">
                           <span className="text-gray-600 min-w-24">CNAME:</span>{' '}
-                          <span className="text-blue-600 font-medium">{finding.evidence.dnsRecords.cname}</span>
+                          <span className="text-blue-600 font-medium">{finding.cnameRecord}</span>
                         </div>
                         <div className="flex items-start">
                           <span className="text-gray-600 min-w-24">A Records:</span>{' '}
                           <span className="text-gray-500">
-                            {finding.evidence.dnsRecords.aRecords.length > 0 
+                            {finding.evidence?.dnsRecords?.aRecords?.length > 0 
                               ? finding.evidence.dnsRecords.aRecords.join(', ') 
                               : 'None'}
                           </span>
@@ -238,16 +200,20 @@ const Findings = () => {
                         <div className="flex items-start">
                           <span className="text-gray-600 min-w-32">Status Code:</span>{' '}
                           <span className="font-semibold text-orange-600">
-                            {finding.evidence.httpResponse.statusCode}
+                            {finding.httpStatusCode || finding.evidence?.httpResponse?.statusCode || 'N/A'}
                           </span>
                         </div>
                         <div className="flex items-start">
                           <span className="text-gray-600 min-w-32">Title:</span>{' '}
-                          <span className="text-gray-900 font-medium">{finding.evidence.httpResponse.title}</span>
+                          <span className="text-gray-900 font-medium">
+                            {finding.evidence?.httpResponse?.title || 'N/A'}
+                          </span>
                         </div>
                         <div className="flex items-start">
                           <span className="text-gray-600 min-w-32">Body:</span>{' '}
-                          <span className="text-gray-700 italic">{finding.evidence.httpResponse.body}</span>
+                          <span className="text-gray-700 italic">
+                            {finding.evidence?.httpResponse?.body || 'N/A'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -260,7 +226,9 @@ const Findings = () => {
                       Matched Pattern
                     </h4>
                     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                      <Badge variant="info">{finding.evidence.providerPattern}</Badge>
+                      <Badge variant="info">
+                        {finding.provider} - {finding.evidence?.providerPattern || 'Takeover Detected'}
+                      </Badge>
                     </div>
                   </div>
 
@@ -272,7 +240,11 @@ const Findings = () => {
                     </h4>
                     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                       <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                        {finding.remediation.map((step, index) => (
+                        {(finding.remediation?.steps || [
+                          `Remove the CNAME DNS record pointing to ${finding.cnameRecord}`,
+                          'Or claim the resource on the provider',
+                          'Verify no sensitive data is exposed on this subdomain'
+                        ]).map((step, index) => (
                           <li key={index} className="pl-2">{step}</li>
                         ))}
                       </ol>
@@ -284,8 +256,9 @@ const Findings = () => {
           </Card>
         ))}
       </div>
+      )}
 
-      {filteredFindings.length === 0 && (
+      {!loading && !error && filteredFindings.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
             <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
