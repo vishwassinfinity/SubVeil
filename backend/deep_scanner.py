@@ -319,6 +319,14 @@ class DeepScanner:
         try:
             import socket
             
+            # Extract base domain for MX and NS queries (they don't work on subdomains)
+            hostname_parts = self.hostname.split('.')
+            if len(hostname_parts) > 2:
+                # Handle subdomains - get base domain (last 2 parts)
+                base_domain = '.'.join(hostname_parts[-2:])
+            else:
+                base_domain = self.hostname
+            
             # A Records (IPv4)
             try:
                 a_records = socket.getaddrinfo(self.hostname, None, socket.AF_INET)
@@ -337,30 +345,46 @@ class DeepScanner:
             try:
                 import dns.resolver
                 
-                # MX Records
+                resolver = dns.resolver.Resolver()
+                resolver.timeout = 5
+                resolver.lifetime = 5
+                
+                # MX Records (query base domain)
                 try:
-                    mx = dns.resolver.resolve(self.hostname, 'MX')
-                    result['mx_records'] = [str(r.exchange) for r in mx][:5]
-                except:
+                    mx = resolver.resolve(base_domain, 'MX')
+                    result['mx_records'] = [str(r.exchange).rstrip('.') for r in mx][:5]
+                except dns.resolver.NoAnswer:
+                    pass
+                except dns.resolver.NXDOMAIN:
+                    pass
+                except Exception:
                     pass
                 
                 # TXT Records
                 try:
-                    txt = dns.resolver.resolve(self.hostname, 'TXT')
-                    result['txt_records'] = [str(r)[:100] for r in txt][:5]
-                except:
+                    txt = resolver.resolve(self.hostname, 'TXT')
+                    result['txt_records'] = [str(r).strip('"')[:100] for r in txt][:5]
+                except dns.resolver.NoAnswer:
+                    pass
+                except dns.resolver.NXDOMAIN:
+                    pass
+                except Exception:
                     pass
                 
-                # NS Records
+                # NS Records (query base domain)
                 try:
-                    ns = dns.resolver.resolve(self.hostname, 'NS')
-                    result['ns_records'] = [str(r) for r in ns][:5]
-                except:
+                    ns = resolver.resolve(base_domain, 'NS')
+                    result['ns_records'] = [str(r).rstrip('.') for r in ns][:5]
+                except dns.resolver.NoAnswer:
+                    pass
+                except dns.resolver.NXDOMAIN:
+                    pass
+                except Exception:
                     pass
                     
             except ImportError:
                 # dnspython not installed, use basic info
-                pass
+                result['error'] = 'dnspython not installed - MX/NS records unavailable'
             
         except Exception as e:
             result['error'] = str(e)
@@ -530,23 +554,86 @@ class DeepScanner:
         }
         
         try:
-            response = requests.get(self.url, timeout=10, allow_redirects=True, verify=False)
+            # First, try with allow_redirects=False to manually track each hop
+            session = requests.Session()
+            current_url = self.url
+            visited_urls = set()
+            max_redirects = 20  # Prevent infinite loops
             
-            if response.history:
-                result['has_redirects'] = True
-                result['count'] = len(response.history)
+            while len(result['chain']) < max_redirects:
+                if current_url in visited_urls:
+                    break  # Prevent redirect loops
+                visited_urls.add(current_url)
                 
-                for r in response.history:
-                    result['chain'].append({
-                        'url': r.url,
-                        'status_code': r.status_code
-                    })
-                
-                result['final_url'] = response.url
-                
-                # Check if HTTP to HTTPS upgrade happened
-                if self.url.startswith('http://') and response.url.startswith('https://'):
-                    result['https_upgrade'] = True
+                try:
+                    response = session.get(
+                        current_url, 
+                        timeout=10, 
+                        allow_redirects=False, 
+                        verify=False,
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                    )
+                    
+                    # Check if this is a redirect response (3xx status codes)
+                    if response.status_code in (301, 302, 303, 307, 308):
+                        location = response.headers.get('Location', '')
+                        
+                        if location:
+                            # Handle relative URLs
+                            if location.startswith('/'):
+                                from urllib.parse import urlparse, urlunparse
+                                parsed = urlparse(current_url)
+                                location = urlunparse((parsed.scheme, parsed.netloc, location, '', '', ''))
+                            elif not location.startswith(('http://', 'https://')):
+                                # Relative path without leading slash
+                                from urllib.parse import urljoin
+                                location = urljoin(current_url, location)
+                            
+                            result['chain'].append({
+                                'url': current_url,
+                                'status_code': response.status_code,
+                                'redirects_to': location
+                            })
+                            
+                            current_url = location
+                        else:
+                            break
+                    else:
+                        # Not a redirect, this is the final URL
+                        result['final_url'] = current_url
+                        break
+                        
+                except requests.exceptions.TooManyRedirects:
+                    result['error'] = 'Too many redirects'
+                    break
+                except requests.exceptions.RequestException as e:
+                    result['error'] = str(e)
+                    break
+            
+            result['count'] = len(result['chain'])
+            result['has_redirects'] = result['count'] > 0
+            
+            # Check if HTTP to HTTPS upgrade happened
+            if self.url.startswith('http://') and result['final_url'].startswith('https://'):
+                result['https_upgrade'] = True
+            
+            # Also try starting from HTTP if original was HTTPS to detect potential upgrade
+            if self.url.startswith('https://'):
+                http_url = 'http://' + self.url[8:]
+                try:
+                    http_response = session.get(
+                        http_url, 
+                        timeout=5, 
+                        allow_redirects=False, 
+                        verify=False,
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                    )
+                    if http_response.status_code in (301, 302, 303, 307, 308):
+                        location = http_response.headers.get('Location', '')
+                        if location and location.startswith('https://'):
+                            result['https_upgrade'] = True
+                except:
+                    pass
             
         except Exception as e:
             result['error'] = str(e)
