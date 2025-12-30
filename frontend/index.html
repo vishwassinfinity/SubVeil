@@ -725,11 +725,11 @@
         </div>
         
         <nav class="nav-menu">
-            <a href="#" class="nav-item active" data-view="dashboard">
-                <span>📊</span> Dashboard
+            <a href="#" class="nav-item active" data-view="networkanalysis">
+                <span>🌐</span> Network Analysis
             </a>
-            <a href="#" class="nav-item" data-view="deepscan">
-                <span>🔍</span> Deep Scan
+            <a href="#" class="nav-item" data-view="dashboard">
+                <span>📊</span> Dashboard
             </a>
             <a href="#" class="nav-item" data-view="history">
                 <span>📜</span> History
@@ -753,32 +753,44 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Dashboard View -->
-        <div id="dashboardView" class="view-container active">
+        <!-- Network Analysis View (Combined Scan & Deep Scan) -->
+        <div id="networkAnalysisView" class="view-container active">
             <div class="top-bar">
                 <div class="page-title">
-                    <h2>URL Intelligence Dashboard</h2>
-                    <p>Real-time domain analysis and threat assessment</p>
+                    <h2>🌐 Network Analysis</h2>
+                    <p>URL intelligence, threat assessment, and deep security scanning</p>
                 </div>
                 <div class="status-indicator">
                     <div class="status-dot"></div>
                     <span class="status-text">System Online</span>
                 </div>
             </div>
-
+            <!-- Live Network Analysis Panel -->
+            <div class="panel" style="margin-bottom: 32px;">
+                <div class="panel-header">
+                    <span class="panel-title">Live Network Analysis</span>
+                </div>
+                <div style="color: var(--text-secondary); font-size: 15px; margin-bottom: 10px;">
+                    <b>What is this?</b> This panel simulates real-time network traffic analysis. You'll see the most active protocols, ports, and IP addresses, color-coded for clarity. Hover over each section for more info.
+                </div>
+                <button id="startLiveBtn" class="btn btn-primary" style="margin-bottom: 18px;">
+                    <span>▶️</span> Start Live Analysis
+                </button>
+                <div id="liveStats" style="margin-top: 16px; display: none;">
+                    <div style="color: var(--text-secondary);">Initializing live network analysis...</div>
+                </div>
+            </div>
             <div class="dashboard-grid">
-                <!-- Left Column: Input & Results -->
+                <!-- Left Column: Scan & Results -->
                 <div class="left-col">
                     <div class="panel">
                         <div class="panel-header">
                             <span class="panel-title">Target Acquisition</span>
                         </div>
-                        
                         <div class="search-container">
                             <span class="search-icon">🔗</span>
                             <input type="text" class="search-input" id="urlInput" placeholder="Enter target URL (e.g., https://example.com)..." autocomplete="off">
                         </div>
-
                         <div class="action-buttons">
                             <button class="btn btn-primary" id="extractBtn">
                                 <span>⚡</span> Initiate Scan
@@ -787,40 +799,33 @@
                                 <span>🗑️</span> Clear
                             </button>
                         </div>
-
                         <div class="loading-overlay" id="loading">
                             <div class="cyber-spinner"></div>
                             <p style="color: var(--text-secondary); font-size: 14px;">Decrypting URL parameters & querying WHOIS database...</p>
                         </div>
-
                         <div id="error" style="display: none; margin-top: 20px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 8px; color: var(--danger); font-size: 14px;"></div>
                     </div>
-
                     <div class="results-area" id="resultContainer">
                         <div class="panel" style="margin-top: 24px;">
                             <div class="panel-header">
                                 <span class="panel-title">Technical Analysis</span>
                             </div>
-                            
                             <div style="background: var(--bg-dark); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
                                 <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">TARGET URL</div>
                                 <div id="originalUrlValue" style="font-family: 'JetBrains Mono', monospace; color: var(--accent-primary); word-break: break-all;"></div>
                             </div>
-
                             <div class="data-grid" id="resultGrid">
                                 <!-- Results injected here -->
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <!-- Right Column: Trust Score & WHOIS -->
                 <div class="right-col">
                     <div class="panel trust-panel" id="domainIntelligence" style="display: none;">
                         <div class="panel-header" style="justify-content: center; border-bottom: none;">
                             <span class="panel-title">Threat Assessment</span>
                         </div>
-
                         <div class="score-container">
                             <svg width="160" height="160">
                                 <circle class="score-ring-bg" cx="80" cy="80" r="70"></circle>
@@ -831,14 +836,153 @@
                                 <span class="score-label">Trust Score</span>
                             </div>
                         </div>
-
                         <div id="riskBadge" class="risk-badge risk-unknown">ANALYZING...</div>
-
                         <div class="whois-list" id="whoisGrid">
                             <!-- WHOIS data injected here -->
                         </div>
                     </div>
                 </div>
+            </div>
+            <!-- Deep Scan Section (below) -->
+            <div class="panel" style="margin-top: 32px;">
+                <div class="panel-header">
+                    <span class="panel-title">Deep Security Scanner</span>
+                </div>
+                <div class="search-container">
+                    <span class="search-icon">🎯</span>
+                    <input type="text" class="search-input" id="deepScanInput" placeholder="Enter target URL for deep security analysis..." autocomplete="off">
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="deepScanBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                        <span>🚀</span> Launch Deep Scan
+                    </button>
+                    <button class="btn btn-secondary" id="deepClearBtn">
+                        <span>🗑️</span> Clear
+                    </button>
+                </div>
+                <div id="deepError" style="display: none; margin-top: 20px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); border-radius: 8px; color: var(--danger); font-size: 14px;"></div>
+            </div>
+            <div id="deepScanLoading" class="panel scan-loading" style="display: none; margin-top: 20px;">
+                <div class="pulse-ring"></div>
+                <p class="scan-progress-text">🔍 Performing deep security analysis...</p>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-top: 10px;">Scanning SSL • Security Headers • Ports • Technology Stack</p>
+            </div>
+            <div id="deepScanResults" style="display: none; margin-top: 20px;">
+                <!-- Security Grade -->
+                <div class="security-grade-display">
+                    <div id="gradeCircle" class="grade-circle grade-f">F</div>
+                    <h3 style="font-size: 18px; margin-bottom: 8px;">Security Score: <span id="securityScoreVal">0</span>/100</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px;">Target: <span id="scanTargetDisplay" style="color: var(--accent-primary); font-family: 'JetBrains Mono', monospace;"></span></p>
+                    <div class="progress-bar" style="max-width: 300px; margin: 16px auto 0;">
+                        <div id="scoreProgressBar" class="progress-fill" style="width: 0%; background: var(--danger);"></div>
+                    </div>
+                </div>
+                <div class="deep-scan-grid">
+                    <!-- SSL Analysis Panel -->
+                    <div class="scan-panel">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon icon-ssl">🔒</div>
+                            <div>
+                                <div class="scan-panel-title">SSL/TLS Certificate</div>
+                                <div class="scan-panel-subtitle">Certificate validation & encryption</div>
+                            </div>
+                        </div>
+                        <div id="sslResults">
+                            <!-- SSL data injected here -->
+                        </div>
+                    </div>
+                    <!-- Security Headers Panel -->
+                    <div class="scan-panel">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon icon-headers">🛡️</div>
+                            <div>
+                                <div class="scan-panel-title">Security Headers</div>
+                                <div class="scan-panel-subtitle">HTTP security header analysis</div>
+                            </div>
+                        </div>
+                        <div id="headersResults">
+                            <!-- Headers data injected here -->
+                        </div>
+                    </div>
+                    <!-- DNS Records Panel -->
+                    <div class="scan-panel">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon icon-dns">🌐</div>
+                            <div>
+                                <div class="scan-panel-title">DNS Records</div>
+                                <div class="scan-panel-subtitle">Domain name system analysis</div>
+                            </div>
+                        </div>
+                        <div id="dnsResults">
+                            <!-- DNS data injected here -->
+                        </div>
+                    </div>
+                    <!-- Technology Detection Panel -->
+                    <div class="scan-panel">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon icon-tech">⚙️</div>
+                            <div>
+                                <div class="scan-panel-title">Technology Stack</div>
+                                <div class="scan-panel-subtitle">Server, CMS & framework detection</div>
+                            </div>
+                        </div>
+                        <div id="techResults">
+                            <!-- Tech data injected here -->
+                        </div>
+                    </div>
+                    <!-- Open Ports Panel -->
+                    <div class="scan-panel">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon icon-ports">🔌</div>
+                            <div>
+                                <div class="scan-panel-title">Port Analysis</div>
+                                <div class="scan-panel-subtitle">Open ports & services</div>
+                            </div>
+                        </div>
+                        <div id="portsResults">
+                            <!-- Ports data injected here -->
+                        </div>
+                    </div>
+                    <!-- Redirect Chain Panel -->
+                    <div class="scan-panel">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon icon-redirect">↪️</div>
+                            <div>
+                                <div class="scan-panel-title">Redirect Analysis</div>
+                                <div class="scan-panel-subtitle">HTTP redirect chain tracking</div>
+                            </div>
+                        </div>
+                        <div id="redirectResults">
+                            <!-- Redirect data injected here -->
+                        </div>
+                    </div>
+                    <!-- Findings Panel (Full Width) -->
+                    <div class="scan-panel full-width">
+                        <div class="scan-panel-header">
+                            <div class="scan-panel-icon" style="background: rgba(139, 92, 246, 0.15);">📋</div>
+                            <div>
+                                <div class="scan-panel-title">Security Findings</div>
+                                <div class="scan-panel-subtitle">Detailed security assessment results</div>
+                            </div>
+                        </div>
+                        <div id="findingsResults" class="findings-list">
+                            <!-- Findings injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Dashboard View (Empty Placeholder) -->
+        <div id="dashboardView" class="view-container">
+            <div class="top-bar">
+                <div class="page-title">
+                    <h2>📊 Dashboard</h2>
+                    <p>This page is under construction.</p>
+                </div>
+            </div>
+            <div class="panel" style="text-align: center; padding: 60px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">🚧</div>
+                <h3 style="color: var(--text-secondary);">Dashboard will be available soon.</h3>
             </div>
         </div>
 
@@ -1030,11 +1174,98 @@
     </main>
 
     <script>
+                // ==================== Live Network Analysis (Simulated) ====================
+                const liveStats = document.getElementById('liveStats');
+                const startLiveBtn = document.getElementById('startLiveBtn');
+                let liveInterval = null;
+                function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+                function randomIP() {
+                    return `${randomInt(10, 250)}.${randomInt(0, 255)}.${randomInt(0, 255)}.${randomInt(1, 254)}`;
+                }
+                function randomProtocol() {
+                    const protos = ['TCP', 'UDP', 'ICMP', 'HTTP', 'HTTPS', 'DNS', 'ARP', 'TLS', 'FTP', 'SSH'];
+                    return protos[randomInt(0, protos.length - 1)];
+                }
+                function randomPort() {
+                    const ports = [80, 443, 53, 22, 21, 25, 110, 8080, 3306, 123];
+                    return ports[randomInt(0, ports.length - 1)];
+                }
+                function generateLiveStats() {
+                    // Simulate dynamic stats
+                    const totalPackets = randomInt(100, 1000);
+                    const protocolCounts = {};
+                    const portCounts = {};
+                    const ipCounts = {};
+                    for (let i = 0; i < 8; i++) {
+                        const proto = randomProtocol();
+                        protocolCounts[proto] = (protocolCounts[proto] || 0) + randomInt(5, 50);
+                    }
+                    for (let i = 0; i < 8; i++) {
+                        const port = randomPort();
+                        portCounts[port] = (portCounts[port] || 0) + randomInt(5, 40);
+                    }
+                    for (let i = 0; i < 8; i++) {
+                        const ip = randomIP();
+                        ipCounts[ip] = (ipCounts[ip] || 0) + randomInt(1, 20);
+                    }
+                    // Find top protocol, port, ip
+                    function getTop(obj) {
+                        return Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,3);
+                    }
+                    const topProtocols = getTop(protocolCounts);
+                    const topPorts = getTop(portCounts);
+                    const topIPs = getTop(ipCounts);
+                    // Color helpers
+                    function colorForProtocol(proto) {
+                        if (["HTTP","HTTPS","DNS","TCP","UDP"].includes(proto)) return 'var(--success)';
+                        if (["ICMP","TLS","FTP","SSH"].includes(proto)) return 'var(--warning)';
+                        return 'var(--danger)';
+                    }
+                    function colorForPort(port) {
+                        port = Number(port);
+                        if ([80,443,53,22,21].includes(port)) return 'var(--success)';
+                        if (port < 1024) return 'var(--warning)';
+                        return 'var(--danger)';
+                    }
+                    function colorForIP(ip) {
+                        // Just highlight the top IP as green, others as yellow
+                        return ip === topIPs[0]?.[0] ? 'var(--success)' : 'var(--warning)';
+                    }
+                    let html = `<div style=\"margin-bottom:10px;\"><b>Total Packets:</b> ${totalPackets}</div>`;
+                    html += `<div style=\"margin-bottom:10px;\"><b>Protocols</b> <span title='Types of network traffic detected (e.g., HTTP, DNS, TCP)'>❓</span>:`;
+                    html += '<ul>';
+                    for (const [proto, count] of topProtocols) {
+                        html += `<li style=\"color:${colorForProtocol(proto)}; font-weight:600;\">${proto}: ${count} <span style=\"font-size:12px; color:var(--text-secondary);\">${proto === topProtocols[0][0] ? '(most active)' : ''}</span></li>`;
+                    }
+                    html += '</ul></div>';
+                    html += `<div style=\"margin-bottom:10px;\"><b>Ports</b> <span title='Network ports in use (e.g., 80 for HTTP, 443 for HTTPS)'>❓</span>:`;
+                    html += '<ul>';
+                    for (const [port, count] of topPorts) {
+                        html += `<li style=\"color:${colorForPort(port)}; font-weight:600;\">${port}: ${count} <span style=\"font-size:12px; color:var(--text-secondary);\">${port == topPorts[0][0] ? '(most used)' : ''}</span></li>`;
+                    }
+                    html += '</ul></div>';
+                    html += `<div style=\"margin-bottom:10px;\"><b>IP Addresses</b> <span title='Most active source or destination IPs detected'>❓</span>:`;
+                    html += '<ul>';
+                    for (const [ip, count] of topIPs) {
+                        html += `<li style=\"color:${colorForIP(ip)}; font-weight:600;\">${ip}: ${count} <span style=\"font-size:12px; color:var(--text-secondary);\">${ip == topIPs[0][0] ? '(most active)' : ''}</span></li>`;
+                    }
+                    html += '</ul></div>';
+                    html += `<div style=\"color:var(--text-secondary); font-size:13px; margin-top:10px;\">Green = common/expected, Yellow = uncommon, Red = rare or suspicious.</div>`;
+                    liveStats.innerHTML = html;
+                }
+                if (startLiveBtn) {
+                    startLiveBtn.addEventListener('click', () => {
+                        liveStats.style.display = 'block';
+                        startLiveBtn.style.display = 'none';
+                        generateLiveStats();
+                        liveInterval = setInterval(generateLiveStats, 2000);
+                    });
+                }
         // ==================== Navigation ====================
         const navItems = document.querySelectorAll('.nav-item');
         const views = {
+            networkanalysis: document.getElementById('networkAnalysisView'),
             dashboard: document.getElementById('dashboardView'),
-            deepscan: document.getElementById('deepscanView'),
             history: document.getElementById('historyView'),
             settings: document.getElementById('settingsView')
         };
@@ -1043,11 +1274,9 @@
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const viewName = item.dataset.view;
-                
                 // Update nav active state
                 navItems.forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
-                
                 // Show selected view
                 Object.values(views).forEach(v => v.classList.remove('active'));
                 if (views[viewName]) {
@@ -1056,7 +1285,7 @@
             });
         });
 
-        // ==================== Dashboard Functionality ====================
+        // ==================== Network Analysis Functionality ====================
         const urlInput = document.getElementById('urlInput');
         const extractBtn = document.getElementById('extractBtn');
         const clearBtn = document.getElementById('clearBtn');

@@ -3,16 +3,20 @@ Flask API Server for URL Information Extractor
 Provides REST API endpoints to extract URL information
 """
 
+
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from url_extractor import URLExtractor
 from deep_scanner import DeepScanner
 import os
+from network_analysis_api import network_analysis_api
+
 
 app = Flask(__name__, 
             static_folder='../frontend',
             template_folder='../frontend')
 CORS(app)
+app.register_blueprint(network_analysis_api)
 
 
 @app.route('/')
