@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="SubVeil - Advanced Cyber Intelligence Dashboard for URL analysis and security scanning">
-    <meta name="theme-color" content="#0a0e1a">
+    <meta name="theme-color" content="#f8fafc">
     <title>SubVeil - Cyber Intelligence Dashboard</title>
     
     <!-- Preconnect for fonts -->
@@ -16,6 +16,43 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Main Top Navbar -->
+    <header class="main-navbar" id="mainNavbar">
+        <div class="navbar-left">
+            <button class="navbar-menu-btn" id="navbarMenuBtn" aria-label="Toggle sidebar">
+                <span>☰</span>
+            </button>
+            <div class="navbar-brand">
+                <div class="navbar-logo">🛡️</div>
+                <span class="navbar-title">SubVeil</span>
+            </div>
+        </div>
+        
+        <div class="navbar-center">
+            <div class="navbar-search">
+                <span class="navbar-search-icon">🔍</span>
+                <input type="text" class="navbar-search-input" placeholder="Search..." aria-label="Search">
+                <kbd class="navbar-shortcut">⌘K</kbd>
+            </div>
+        </div>
+        
+        <div class="navbar-right">
+            <div class="navbar-time" id="navbarTime"></div>
+            <button class="navbar-notification" id="notificationBtn" aria-label="Notifications">
+                <span class="notification-icon">🔔</span>
+                <span class="notification-badge" id="notificationBadge"></span>
+            </button>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark/light mode">
+                <span class="theme-toggle-icon" id="themeIcon">🌙</span>
+                <span class="theme-toggle-text" id="themeText">Dark</span>
+            </button>
+            <div class="navbar-user">
+                <div class="navbar-avatar">👤</div>
+                <span class="navbar-username">Admin</span>
+            </div>
+        </div>
+    </header>
+
     <!-- Toast Container for Notifications -->
     <div id="toastContainer" class="toast-container" aria-live="polite"></div>
     
@@ -35,13 +72,17 @@
         </div>
 
         <nav class="nav-menu" role="navigation" aria-label="Main navigation">
-            <a href="#" class="nav-item active" data-view="networkAnalysisView" aria-current="page">
+            <a href="#" class="nav-item active" data-view="dashboardView" aria-current="page">
+                <span>📊</span>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-view="networkAnalysisView">
                 <span>🌐</span>
                 <span>Network Analysis</span>
             </a>
-            <a href="#" class="nav-item" data-view="dashboardView">
-                <span>📊</span>
-                <span>Dashboard</span>
+            <a href="#" class="nav-item" data-view="logAnalysisView">
+                <span>📋</span>
+                <span>Log Analysis</span>
             </a>
             <a href="#" class="nav-item" data-view="historyView">
                 <span>📜</span>
@@ -74,15 +115,11 @@
     <main class="main-content">
         
         <!-- ==================== Network Analysis View ==================== -->
-        <section id="networkAnalysisView" class="view-container active">
+        <section id="networkAnalysisView" class="view-container">
             <header class="top-bar">
                 <div class="page-title">
                     <h2>🌐 Network Analysis</h2>
                     <p>Analyze URLs for security threats, extract metadata, and perform deep security scans</p>
-                </div>
-                <div class="status-indicator">
-                    <span class="status-dot"></span>
-                    <span class="status-text">System Online</span>
                 </div>
             </header>
 
@@ -149,7 +186,7 @@
                     </header>
 
                     <div class="score-container">
-                        <svg viewBox="0 0 100 100" width="180" height="180">
+                        <svg viewBox="0 0 100 100">
                             <circle class="score-ring-bg" cx="50" cy="50" r="42"/>
                             <circle id="scoreRing" class="score-ring" cx="50" cy="50" r="42" 
                                 stroke-dasharray="264" stroke-dashoffset="264"/>
@@ -256,15 +293,11 @@
         </section>
 
         <!-- ==================== Dashboard View ==================== -->
-        <section id="dashboardView" class="view-container">
+        <section id="dashboardView" class="view-container active">
             <header class="top-bar">
                 <div class="page-title">
                     <h2>📊 Dashboard</h2>
                     <p>Overview of your security analysis activity and threat intelligence</p>
-                </div>
-                <div class="status-indicator">
-                    <span class="status-dot"></span>
-                    <span class="status-text">Live Data</span>
                 </div>
             </header>
 
@@ -429,6 +462,152 @@
                     <h3 class="placeholder-title">No Scan History</h3>
                     <p class="placeholder-text">Your scanned URLs will appear here. Start by analyzing a URL!</p>
                 </div>
+            </div>
+        </section>
+
+        <!-- ==================== Log Analysis View ==================== -->
+        <section id="logAnalysisView" class="view-container">
+            <header class="top-bar">
+                <div class="page-title">
+                    <h2>📋 Log Analysis</h2>
+                    <p>Analyze and monitor system logs, security events, and access patterns</p>
+                </div>
+            </header>
+
+            <div class="log-analysis-grid">
+                <!-- Log Upload Panel -->
+                <article class="panel">
+                    <header class="panel-header">
+                        <h3 class="panel-title"><span>📤</span> Upload Logs</h3>
+                        <span class="panel-badge">Import</span>
+                    </header>
+                    
+                    <div class="log-upload-area" id="logUploadArea">
+                        <div class="upload-dropzone" id="logDropzone">
+                            <div class="dropzone-icon">📁</div>
+                            <h4 class="dropzone-title">Drop log files here</h4>
+                            <p class="dropzone-text">or click to browse</p>
+                            <input type="file" id="logFileInput" accept=".log,.txt,.json,.csv" multiple hidden>
+                        </div>
+                        <div class="upload-formats">
+                            <span class="format-tag">.log</span>
+                            <span class="format-tag">.txt</span>
+                            <span class="format-tag">.json</span>
+                            <span class="format-tag">.csv</span>
+                        </div>
+                    </div>
+
+                    <div class="log-source-options">
+                        <h4 class="options-title">Or connect to log source:</h4>
+                        <div class="source-buttons">
+                            <button class="source-btn" data-source="syslog">
+                                <span>🖥️</span> Syslog
+                            </button>
+                            <button class="source-btn" data-source="apache">
+                                <span>🌐</span> Apache
+                            </button>
+                            <button class="source-btn" data-source="nginx">
+                                <span>⚡</span> Nginx
+                            </button>
+                            <button class="source-btn" data-source="custom">
+                                <span>🔧</span> Custom
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Log Statistics Panel -->
+                <article class="panel">
+                    <header class="panel-header">
+                        <h3 class="panel-title"><span>📊</span> Log Statistics</h3>
+                    </header>
+                    
+                    <div class="log-stats-grid">
+                        <div class="log-stat-card">
+                            <div class="log-stat-icon" style="background: var(--success-light); color: var(--success);">📝</div>
+                            <div class="log-stat-info">
+                                <span class="log-stat-value" id="totalLogEntries">0</span>
+                                <span class="log-stat-label">Total Entries</span>
+                            </div>
+                        </div>
+                        <div class="log-stat-card">
+                            <div class="log-stat-icon" style="background: var(--danger-light); color: var(--danger);">⚠️</div>
+                            <div class="log-stat-info">
+                                <span class="log-stat-value" id="errorCount">0</span>
+                                <span class="log-stat-label">Errors</span>
+                            </div>
+                        </div>
+                        <div class="log-stat-card">
+                            <div class="log-stat-icon" style="background: var(--warning-light); color: var(--warning);">🔔</div>
+                            <div class="log-stat-info">
+                                <span class="log-stat-value" id="warningCount">0</span>
+                                <span class="log-stat-label">Warnings</span>
+                            </div>
+                        </div>
+                        <div class="log-stat-card">
+                            <div class="log-stat-icon" style="background: #dbeafe; color: var(--accent-primary);">ℹ️</div>
+                            <div class="log-stat-info">
+                                <span class="log-stat-value" id="infoCount">0</span>
+                                <span class="log-stat-label">Info</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Log Viewer Panel (Full Width) -->
+                <article class="panel full-width">
+                    <header class="panel-header">
+                        <h3 class="panel-title"><span>👁️</span> Log Viewer</h3>
+                        <div class="log-viewer-controls">
+                            <select id="logLevelFilter" class="log-filter-select">
+                                <option value="all">All Levels</option>
+                                <option value="error">Errors</option>
+                                <option value="warning">Warnings</option>
+                                <option value="info">Info</option>
+                                <option value="debug">Debug</option>
+                            </select>
+                            <input type="text" id="logSearchInput" class="log-search-input" placeholder="Search logs...">
+                            <button class="btn btn-secondary" id="refreshLogsBtn">
+                                <span>🔄</span> Refresh
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <div class="log-viewer-container" id="logViewerContainer">
+                        <div class="log-placeholder">
+                            <div class="placeholder-icon">📋</div>
+                            <h3 class="placeholder-title">No Logs Loaded</h3>
+                            <p class="placeholder-text">Upload a log file or connect to a log source to begin analysis</p>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Security Events Panel -->
+                <article class="panel">
+                    <header class="panel-header">
+                        <h3 class="panel-title"><span>🔒</span> Security Events</h3>
+                        <span class="panel-badge badge-danger">Live</span>
+                    </header>
+                    
+                    <div class="security-events-list" id="securityEventsList">
+                        <div class="empty-state-small">
+                            <span>No security events detected</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- IP Analysis Panel -->
+                <article class="panel">
+                    <header class="panel-header">
+                        <h3 class="panel-title"><span>🌍</span> Top IP Addresses</h3>
+                    </header>
+                    
+                    <div class="ip-list" id="ipAddressList">
+                        <div class="empty-state-small">
+                            <span>No IP data available</span>
+                        </div>
+                    </div>
+                </article>
             </div>
         </section>
 

@@ -8,14 +8,16 @@ const CONFIG = {
     API_BASE: 'http://localhost:8000/api',
     TOAST_DURATION: 4000,
     ANIMATION_DURATION: 300,
-    STORAGE_KEY: 'subveil_stats'
+    STORAGE_KEY: 'subveil_stats',
+    THEME_KEY: 'subveil_theme'
 };
 
 // ==================== State Management ====================
 const state = {
     isLoading: false,
     isDeepScanning: false,
-    currentView: 'networkAnalysisView',
+    currentView: 'dashboardView',
+    currentTheme: 'light',
     stats: {
         scansToday: 0,
         threatsFound: 0,
@@ -25,6 +27,11 @@ const state = {
 
 // ==================== DOM Elements ====================
 const elements = {
+    // Theme Toggle
+    themeToggle: document.getElementById('themeToggle'),
+    themeIcon: document.getElementById('themeIcon'),
+    themeText: document.getElementById('themeText'),
+    
     // Toast
     toastContainer: document.getElementById('toastContainer'),
     
@@ -67,7 +74,23 @@ const elements = {
     // Stats
     scansToday: document.getElementById('scansToday'),
     threatsFound: document.getElementById('threatsFound'),
-    urlsAnalyzed: document.getElementById('urlsAnalyzed')
+    urlsAnalyzed: document.getElementById('urlsAnalyzed'),
+    
+    // Navbar
+    navbarTime: document.getElementById('navbarTime'),
+    navbarMenuBtn: document.getElementById('navbarMenuBtn'),
+    
+    // Log Analysis
+    logDropzone: document.getElementById('logDropzone'),
+    logFileInput: document.getElementById('logFileInput'),
+    logViewerContainer: document.getElementById('logViewerContainer'),
+    logLevelFilter: document.getElementById('logLevelFilter'),
+    logSearchInput: document.getElementById('logSearchInput'),
+    refreshLogsBtn: document.getElementById('refreshLogsBtn'),
+    totalLogEntries: document.getElementById('totalLogEntries'),
+    errorCount: document.getElementById('errorCount'),
+    warningCount: document.getElementById('warningCount'),
+    infoCount: document.getElementById('infoCount')
 };
 
 // ==================== Utility Functions ====================
@@ -1927,12 +1950,430 @@ function initSettings() {
     });
 }
 
+// ==================== Theme Management ====================
+
+/**
+ * Initialize theme based on saved preference or system preference
+ */
+function initTheme() {
+    const savedTheme = localStorage.getItem(CONFIG.THEME_KEY);
+    
+    if (savedTheme) {
+        state.currentTheme = savedTheme;
+    } else {
+        // Check system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        state.currentTheme = prefersDark ? 'dark' : 'light';
+    }
+    
+    applyTheme(state.currentTheme);
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem(CONFIG.THEME_KEY)) {
+            state.currentTheme = e.matches ? 'dark' : 'light';
+            applyTheme(state.currentTheme);
+        }
+    });
+    
+    // Theme toggle click handler
+    if (elements.themeToggle) {
+        elements.themeToggle.addEventListener('click', toggleTheme);
+    }
+}
+
+/**
+ * Apply theme to the document
+ */
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // Update toggle button
+    if (elements.themeIcon && elements.themeText) {
+        if (theme === 'dark') {
+            elements.themeIcon.textContent = '☀️';
+            elements.themeText.textContent = 'Light';
+        } else {
+            elements.themeIcon.textContent = '🌙';
+            elements.themeText.textContent = 'Dark';
+        }
+    }
+    
+    // Update meta theme-color
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', theme === 'dark' ? '#0f172a' : '#f8fafc');
+    }
+}
+
+/**
+ * Toggle between light and dark theme
+ */
+function toggleTheme() {
+    state.currentTheme = state.currentTheme === 'light' ? 'dark' : 'light';
+    localStorage.setItem(CONFIG.THEME_KEY, state.currentTheme);
+    applyTheme(state.currentTheme);
+    
+    showToast('info', 'Theme Changed', `Switched to ${state.currentTheme} mode`);
+}
+
+// ==================== Navbar ====================
+
+/**
+ * Initialize navbar time display
+ */
+function initNavbar() {
+    updateNavbarTime();
+    setInterval(updateNavbarTime, 1000);
+    
+    // Mobile menu toggle
+    if (elements.navbarMenuBtn) {
+        elements.navbarMenuBtn.addEventListener('click', () => {
+            elements.sidebar.classList.toggle('open');
+        });
+    }
+}
+
+/**
+ * Update navbar time display
+ */
+function updateNavbarTime() {
+    if (elements.navbarTime) {
+        const now = new Date();
+        const options = { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit'
+        };
+        elements.navbarTime.textContent = now.toLocaleDateString('en-US', options);
+    }
+}
+
+// ==================== Log Analysis ====================
+
+/**
+ * Log analysis state
+ */
+const logState = {
+    logs: [],
+    filteredLogs: [],
+    currentFilter: 'all'
+};
+
+/**
+ * Initialize log analysis view
+ */
+function initLogAnalysis() {
+    if (!elements.logDropzone || !elements.logFileInput) return;
+    
+    // File input change
+    elements.logFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            handleLogFile(e.target.files[0]);
+        }
+    });
+    
+    // Drag and drop
+    elements.logDropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elements.logDropzone.classList.add('dragover');
+    });
+    
+    elements.logDropzone.addEventListener('dragleave', () => {
+        elements.logDropzone.classList.remove('dragover');
+    });
+    
+    elements.logDropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elements.logDropzone.classList.remove('dragover');
+        
+        if (e.dataTransfer.files.length > 0) {
+            handleLogFile(e.dataTransfer.files[0]);
+        }
+    });
+    
+    // Click to upload
+    elements.logDropzone.addEventListener('click', () => {
+        elements.logFileInput.click();
+    });
+    
+    // Filter change
+    if (elements.logLevelFilter) {
+        elements.logLevelFilter.addEventListener('change', (e) => {
+            logState.currentFilter = e.target.value;
+            filterLogs();
+        });
+    }
+    
+    // Search
+    if (elements.logSearchInput) {
+        elements.logSearchInput.addEventListener('input', debounce(() => {
+            filterLogs();
+        }, 300));
+    }
+    
+    // Refresh button
+    if (elements.refreshLogsBtn) {
+        elements.refreshLogsBtn.addEventListener('click', () => {
+            if (logState.logs.length > 0) {
+                displayLogs(logState.filteredLogs);
+                showToast('success', 'Refreshed', 'Log view refreshed');
+            }
+        });
+    }
+}
+
+/**
+ * Handle log file upload
+ */
+function handleLogFile(file) {
+    const validTypes = ['text/plain', 'application/json', 'text/csv', 'text/x-log'];
+    const validExtensions = ['.log', '.txt', '.json', '.csv'];
+    
+    const extension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(file.type) && !validExtensions.includes(extension)) {
+        showToast('error', 'Invalid File', 'Please upload a valid log file (.log, .txt, .json, .csv)');
+        return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+        const content = e.target.result;
+        parseLogContent(content, file.name);
+    };
+    
+    reader.onerror = () => {
+        showToast('error', 'Read Error', 'Failed to read the file');
+    };
+    
+    reader.readAsText(file);
+}
+
+/**
+ * Parse log content
+ */
+function parseLogContent(content, filename) {
+    const lines = content.split('\n').filter(line => line.trim());
+    
+    logState.logs = lines.map((line, index) => {
+        const logEntry = parseLogLine(line, index);
+        return logEntry;
+    });
+    
+    updateLogStats();
+    filterLogs();
+    
+    showToast('success', 'File Loaded', `Parsed ${logState.logs.length} log entries from ${filename}`);
+}
+
+/**
+ * Parse a single log line
+ */
+function parseLogLine(line, index) {
+    // Try to detect log level
+    let level = 'info';
+    const lowerLine = line.toLowerCase();
+    
+    if (lowerLine.includes('error') || lowerLine.includes('fatal') || lowerLine.includes('critical')) {
+        level = 'error';
+    } else if (lowerLine.includes('warn')) {
+        level = 'warning';
+    } else if (lowerLine.includes('debug')) {
+        level = 'debug';
+    }
+    
+    // Try to extract timestamp
+    const timestampMatch = line.match(/\d{4}[-/]\d{2}[-/]\d{2}[\sT]\d{2}:\d{2}:\d{2}/);
+    const timestamp = timestampMatch ? timestampMatch[0] : null;
+    
+    // Try to extract IP address
+    const ipMatch = line.match(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/);
+    const ip = ipMatch ? ipMatch[0] : null;
+    
+    return {
+        id: index,
+        raw: line,
+        level,
+        timestamp,
+        ip,
+        message: line
+    };
+}
+
+/**
+ * Update log statistics
+ */
+function updateLogStats() {
+    const stats = {
+        total: logState.logs.length,
+        error: logState.logs.filter(l => l.level === 'error').length,
+        warning: logState.logs.filter(l => l.level === 'warning').length,
+        info: logState.logs.filter(l => l.level === 'info').length
+    };
+    
+    if (elements.totalLogEntries) elements.totalLogEntries.textContent = stats.total;
+    if (elements.errorCount) elements.errorCount.textContent = stats.error;
+    if (elements.warningCount) elements.warningCount.textContent = stats.warning;
+    if (elements.infoCount) elements.infoCount.textContent = stats.info;
+    
+    // Update security events
+    updateSecurityEvents();
+    
+    // Update IP list
+    updateIPList();
+}
+
+/**
+ * Filter and display logs
+ */
+function filterLogs() {
+    let filtered = [...logState.logs];
+    
+    // Apply level filter
+    if (logState.currentFilter !== 'all') {
+        filtered = filtered.filter(log => log.level === logState.currentFilter);
+    }
+    
+    // Apply search filter
+    if (elements.logSearchInput && elements.logSearchInput.value) {
+        const search = elements.logSearchInput.value.toLowerCase();
+        filtered = filtered.filter(log => log.raw.toLowerCase().includes(search));
+    }
+    
+    logState.filteredLogs = filtered;
+    displayLogs(filtered);
+}
+
+/**
+ * Display logs in the viewer
+ */
+function displayLogs(logs) {
+    if (!elements.logViewerContainer) return;
+    
+    if (logs.length === 0) {
+        elements.logViewerContainer.innerHTML = `
+            <div class="log-entry log-info">
+                <span class="log-message">No logs to display. Upload a log file to get started.</span>
+            </div>
+        `;
+        return;
+    }
+    
+    const html = logs.slice(0, 500).map(log => `
+        <div class="log-entry log-${log.level}">
+            ${log.timestamp ? `<span class="log-timestamp">${log.timestamp}</span>` : ''}
+            <span class="log-level">${log.level.toUpperCase()}</span>
+            <span class="log-message">${escapeHtml(log.message)}</span>
+        </div>
+    `).join('');
+    
+    elements.logViewerContainer.innerHTML = html;
+    
+    if (logs.length > 500) {
+        elements.logViewerContainer.innerHTML += `
+            <div class="log-entry log-info">
+                <span class="log-message">Showing first 500 of ${logs.length} entries</span>
+            </div>
+        `;
+    }
+}
+
+/**
+ * Update security events panel
+ */
+function updateSecurityEvents() {
+    const securityList = document.getElementById('securityEventsList');
+    if (!securityList) return;
+    
+    const securityPatterns = [
+        { pattern: /failed.*login|login.*fail|authentication.*fail/i, type: 'Auth Failure', severity: 'warning' },
+        { pattern: /unauthorized|access.*denied|permission.*denied/i, type: 'Access Denied', severity: 'warning' },
+        { pattern: /attack|injection|xss|sql.*inject/i, type: 'Attack Detected', severity: 'error' },
+        { pattern: /malware|virus|trojan|ransomware/i, type: 'Malware', severity: 'error' },
+        { pattern: /suspicious|anomaly|unusual/i, type: 'Suspicious Activity', severity: 'warning' }
+    ];
+    
+    const events = [];
+    
+    logState.logs.forEach(log => {
+        securityPatterns.forEach(({ pattern, type, severity }) => {
+            if (pattern.test(log.raw)) {
+                events.push({
+                    type,
+                    severity,
+                    timestamp: log.timestamp,
+                    message: log.raw.substring(0, 100)
+                });
+            }
+        });
+    });
+    
+    if (events.length === 0) {
+        securityList.innerHTML = '<div class="security-event-item">No security events detected</div>';
+        return;
+    }
+    
+    securityList.innerHTML = events.slice(0, 10).map(event => `
+        <div class="security-event-item ${event.severity}">
+            <span class="event-type">${event.type}</span>
+            ${event.timestamp ? `<span class="event-time">${event.timestamp}</span>` : ''}
+        </div>
+    `).join('');
+}
+
+/**
+ * Update IP list panel
+ */
+function updateIPList() {
+    const ipList = document.getElementById('ipAddressList');
+    if (!ipList) return;
+    
+    const ipCounts = {};
+    
+    logState.logs.forEach(log => {
+        if (log.ip) {
+            ipCounts[log.ip] = (ipCounts[log.ip] || 0) + 1;
+        }
+    });
+    
+    const sortedIPs = Object.entries(ipCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+    
+    if (sortedIPs.length === 0) {
+        ipList.innerHTML = '<div class="ip-item">No IP addresses found</div>';
+        return;
+    }
+    
+    ipList.innerHTML = sortedIPs.map(([ip, count]) => `
+        <div class="ip-item">
+            <span class="ip-address">${ip}</span>
+            <span class="ip-count">${count} hits</span>
+        </div>
+    `).join('');
+}
+
+/**
+ * Escape HTML entities
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // ==================== Initialization ====================
 
 /**
  * Initialize the application
  */
 function init() {
+    initTheme();
+    initNavbar();
     loadStats();
     initNavigation();
     initMobileMenu();
@@ -1942,6 +2383,7 @@ function init() {
     initHistoryView();
     initDashboard();
     initSettings();
+    initLogAnalysis();
     
     // Apply saved API URL
     const settings = loadSettings();
